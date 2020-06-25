@@ -2,7 +2,7 @@ import { Component, OnInit, Input } from '@angular/core';
 import { Article } from 'src/app/interfaces/interfaces';
 import { InAppBrowser } from '@ionic-native/in-app-browser/ngx';
 import { SocialSharing } from '@ionic-native/social-sharing/ngx';
-import { ActionSheetController } from '@ionic/angular';
+import { ActionSheetController, Platform } from '@ionic/angular';
 import { DataLocalService } from 'src/app/services/data-local.service';
 import { ToastController } from '@ionic/angular';
 
@@ -22,12 +22,12 @@ export class NoticiaComponent implements OnInit {
                 private actionSheetController: ActionSheetController,
                 private socialSharing: SocialSharing,
                 private dl:DataLocalService,
-                private toastController: ToastController) { }
+                private toastController: ToastController,
+                private platform: Platform) { }
 
   ngOnInit() {}
   
   abrirNoticia(){
-    console.log(this.noticia.url);
     const browser = this.iab.create(this.noticia.url, "_system");
   }
 
@@ -62,12 +62,7 @@ export class NoticiaComponent implements OnInit {
           icon: 'share',
           cssClass: 'action-dark',
           handler: () => {
-            this.socialSharing.share(
-              this.noticia.title,
-              this.noticia.source.name,
-              '',
-              this.noticia.url
-            )
+            this.compartirNoticia();
           }
         },  
         button,
@@ -89,5 +84,30 @@ export class NoticiaComponent implements OnInit {
       duration: 2000
     });
     toast.present();
+  }
+
+  compartirNoticia(){
+
+    if(this.platform.is('cordova')){
+      this.socialSharing.share(
+        this.noticia.title,
+        this.noticia.source.name,
+        '',
+        this.noticia.url
+      )
+    }else{
+      if (navigator['share']) {
+        navigator['share']({
+          title: this.noticia.title,
+          text: this.noticia.source.name,
+          url: this.noticia.url,
+        })
+          .then(() => console.log('Successful share'))
+          .catch((error) => console.log('Error sharing', error));
+      }else{
+        console.log('Error navegador');
+      }
+    }
+    
   }
 }
